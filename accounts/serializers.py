@@ -19,7 +19,27 @@ class createuserserializer(serializers.ModelSerializer):
 
     def create(self,validated_data):
         password = validated_data.pop('password')
-        user =user(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
+        users = user(**validated_data)
+        users.set_password(password)
+        users.save()
+        return users
+
+
+class CreateStudentSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = user
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'password']
+
+    def validate_role(self, value):
+        if value != 'student':  
+            raise serializers.ValidationError("Role student")
+        return value
+
+    def create(self, validated_data):   
+        password = validated_data.pop('password')
+        users = user(**validated_data)
+        users.set_password(password)   
+        users.save()
+        return users
