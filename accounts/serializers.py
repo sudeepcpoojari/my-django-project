@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 from .models import user
 
 class createuserserializer(serializers.ModelSerializer):
@@ -43,3 +44,19 @@ class CreateStudentSerializer(serializers.ModelSerializer):
         users.set_password(password)   
         users.save()
         return users
+
+class SessionLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self,attrs):
+        username=attrs.get('username')
+        password=attrs.get('password')
+
+        user=authenticate(username=username,password=password)
+        if not user:
+            raise serializers.ValidationError("Invalid username or password")
+
+        if not user.is_active:
+            raise serializers.ValidationError("Account disabled,contact administrator")
+        return user

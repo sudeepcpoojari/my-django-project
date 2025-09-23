@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from accounts.models import user
-from .models import Student, Standard , Section
+from .models import Student, Standard ,Section,ParentStudent
 
 
 class StudentRegistrationSerializer(serializers.ModelSerializer):
@@ -46,4 +46,40 @@ class StudentRegistrationSerializer(serializers.ModelSerializer):
             "email":instance.users.email,
             "standard":instance.standard.name if instance.standard else None,
             "section":instance.section.name if instance.section else None,
+        }
+
+
+class LinkParentSerializer(serializers.ModelSerializer):
+    parent_id = serializers.IntegerField(write_only=True)
+    student_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = ParentStudent
+        fields = ['id', 'parent_id', 'student_id']
+
+    def validate(self, data):
+        try:
+            parent = user.objects.get(id=data['parent_id'], role='parent')
+        except user.DoesNotExist:
+            raise serializers.ValidationError("Invalid parent_id or user is not a parent")
+
+        try:
+            student = Student.objects.get(id=data["student_id"])
+        except Student.DoesNotExist:
+            raise serializers.ValidationError("Invalid student_id")
+
+        return data
+
+    def create(self, validated_data):
+        parent = user.objects.get(id=validated_data['parent_id'])
+        student = Student.objects.get(id=validated_data["student_id"])
+        link, created = ParentStudent.objects.get_or_create(parent=parent, student=student)
+        return link
+
+    def to_representation(self, instance):
+        return {
+            "link_id": instance.id,
+            "student": instance.student.users.first_name,
+            "parent": instance.parent.first_name,
+            "message": "Parent linked to student successfully"
         }

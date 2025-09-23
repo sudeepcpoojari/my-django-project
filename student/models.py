@@ -26,3 +26,10 @@ class Student(models.Model):
 
     def __str__(self):
         return self.users.username 
+
+class ParentStudent(models.Model):
+    parent=models.ForeignKey(user, on_delete=models.CASCADE)
+    student=models.ForeignKey(Student, on_delete=models.CASCADE,related_name="parents")
+
+    def __str__(self):
+        return f"{self.parent.get_full_name()} ={self.student.user.get_full_name()}"
